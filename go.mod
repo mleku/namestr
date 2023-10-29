@@ -3,7 +3,6 @@ module github.com/mleku/namestr
 go 1.20
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/gin-gonic/autotls v0.0.5
 	github.com/gookit/color v1.5.4
 	github.com/mleku/appdata v1.0.0

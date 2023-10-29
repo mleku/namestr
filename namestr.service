@@ -1,0 +1,10 @@
+[Unit]
+Description=namestr
+
+[Service]
+Type=simple
+User=me
+ExecStart=/home/me/.local/bin/namestrt
+
+[Install]
+WantedBy=multi-user.target
