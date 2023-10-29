@@ -1,15 +1,11 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
-	"time"
 
-	"github.com/foomo/simplecert"
-	"github.com/foomo/tlsconfig"
+	"github.com/gin-gonic/autotls"
 	"github.com/mleku/appdata"
 	"github.com/mleku/ec/schnorr"
 	"github.com/mleku/signr/pkg/nostr"
@@ -17,9 +13,9 @@ import (
 )
 
 type config struct {
-	c              *cobra.Command
-	DataDir        string
-	verbose, color bool
+	c                *cobra.Command
+	DataDir, message string
+	verbose, color   bool
 }
 
 var s config
@@ -51,7 +47,7 @@ optionally a list of relays can be named, only their domain name is required, th
 			s.c.Help()
 			s.Fatal("at least domain name and npub is required\n")
 		}
-		domain, npub, email, relays := args[0], args[1], args[2], args[3:]
+		domain, npub, relays := args[0], args[1], args[2:]
 		s.Log("domain %v\n", domain)
 		s.Log("npub %v\n", npub)
 		s.Log("relays %v\n", relays)
@@ -90,9 +86,9 @@ optionally a list of relays can be named, only their domain name is required, th
   }
 }	
 `
-		handlr := Handler{jsonText}
+		s.message = jsonText
 		s.Log("text that will be sent in response to requests:\n%s\n",
-			handlr.message)
+			s.message)
 		s.DataDir = appdata.GetDataDir("namestr", false)
 		_, exists, err := CheckFileExists(s.DataDir)
 		if err != nil {
@@ -106,68 +102,10 @@ optionally a list of relays can be named, only their domain name is required, th
 					err)
 			}
 		}
-		var (
-			// the structure that handles reloading the certificate
-			certReloader *simplecert.CertReloader
-			numRenews    int
-			ctx, cancel  = context.WithCancel(context.Background())
-
-			tlsConf = tlsconfig.
-				NewServerTLSConfig(tlsconfig.TLSModeServerStrict)
-			makeServer = func() *http.Server {
-				return &http.Server{
-					Addr:      ":443",
-					Handler:   handlr,
-					TLSConfig: tlsConf,
-				}
-			}
-			srv = makeServer()
-			cfg = simplecert.Default
-		)
-		s.Log("lfg\n")
-		cfg.Domains = []string{domain}
-		cfg.CacheDir = s.DataDir
-		cfg.SSLEmail = email
-		cfg.HTTPAddress = ""
-		cfg.WillRenewCertificate = func() { cancel() }
-		cfg.DidRenewCertificate = func() {
-			numRenews++
-			ctx, cancel = context.WithCancel(context.Background())
-			srv = makeServer()
-			certReloader.ReloadNow()
-			go s.serve(ctx, srv)
-		}
-		certReloader, err = simplecert.Init(cfg, func() { os.Exit(0) })
-		if err != nil {
-			s.Fatal("simplecert init failed: %s\n", err)
-		}
-		go http.ListenAndServe(":80", http.HandlerFunc(simplecert.Redirect))
-		log.Println("will serve at: https://" + cfg.Domains[0])
-		s.serve(ctx, srv)
-		select {}
+		s.Log("starting up server\n")
+		autotls.Run(s, domain)
+		s.Log("finished running server\n")
 	},
-}
-
-func (s *config) serve(ctx context.Context, srv *http.Server) {
-	go func() {
-		if err := srv.ListenAndServeTLS("", ""); err != nil &&
-			err != http.ErrServerClosed {
-
-			s.Fatal("listen: %+s\n", err)
-		}
-	}()
-	s.Info("server started")
-	<-ctx.Done()
-	s.Info("server stopped")
-	ctxShutDown, cancel := context.
-		WithTimeout(context.Background(), 5*time.Second)
-	defer func() { cancel() }()
-	err := srv.Shutdown(ctxShutDown)
-	if err == http.ErrServerClosed {
-		s.Log("server exited properly")
-	} else if err != nil {
-		s.Err("server encountered an error on exit: %+s\n", err)
-	}
 }
 
 func CheckFileExists(name string) (fi os.FileInfo, exists bool, err error) {
@@ -181,13 +119,14 @@ func CheckFileExists(name string) (fi os.FileInfo, exists bool, err error) {
 	return
 }
 
-type Handler struct {
-	message string
-}
-
-func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s config) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.Log("%s\n", r.RequestURI)
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(h.message))
+	if r.RequestURI == "/.well-known/nostr.json?name=_" {
+		w.Write([]byte(s.message))
+	} else {
+		w.Write([]byte("gfy"))
+	}
 }
 
 // Execute adds all child commands to the root command and sets flags
