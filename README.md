@@ -1,5 +1,8 @@
 # namestr
+
 simple, zero configuration NIP-05 with LetsEncrypt TLS security
+
+well, not very much configuration. the actual thing itself just takes parameters, you have to create the launch parameters on your VPS where you pointed your DNS name.
 
 ## usage
 
