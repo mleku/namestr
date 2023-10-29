@@ -122,7 +122,7 @@ func CheckFileExists(name string) (fi os.FileInfo, exists bool, err error) {
 }
 
 func (s config) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.Log("%s\n", r.RequestURI)
+	s.Log("from: %s request uri: %s\n", r.RemoteAddr, r.RequestURI)
 	if r.RequestURI == "/.well-known/nostr.json?name=_" {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(s.message))
