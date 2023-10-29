@@ -13,9 +13,11 @@ import (
 )
 
 type config struct {
-	c                *cobra.Command
-	DataDir, message string
-	verbose, color   bool
+	c                         *cobra.Command
+	DataDir, message          string
+	domain, npub, redirection string
+	relays                    []string
+	verbose, color            bool
 }
 
 var s config
@@ -23,7 +25,7 @@ var DataDirPerm os.FileMode = 0700
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "namestr <domain> <npub> <email> [<relays>...]",
+	Use:   "namestr <domain> <npub> <redirection> [<relays>...]",
 	Short: "zero configuration NIP-05 DNS<->npub identity verification",
 	Long: `namestr
 	
@@ -47,12 +49,12 @@ optionally a list of relays can be named, only their domain name is required, th
 			s.c.Help()
 			s.Fatal("at least domain name and npub is required\n")
 		}
-		domain, npub, relays := args[0], args[1], args[2:]
-		s.Log("domain %v\n", domain)
-		s.Log("npub %v\n", npub)
-		s.Log("relays %v\n", relays)
+		s.domain, s.npub, s.redirection, s.relays = args[0], args[1], args[2], args[3:]
+		s.Log("domain %v\n", s.domain)
+		s.Log("npub %v\n", s.npub)
+		s.Log("relays %v\n", s.relays)
 
-		pk, err := nostr.NpubToPublicKey(npub)
+		pk, err := nostr.NpubToPublicKey(s.npub)
 		if err != nil {
 			s.Fatal("%s\n", err)
 		}
@@ -68,8 +70,8 @@ optionally a list of relays can be named, only their domain name is required, th
   "relays": {
     "` + pkHex + `": [
 `
-		rl := len(relays) - 1
-		for i, rel := range relays {
+		rl := len(s.relays) - 1
+		for i, rel := range s.relays {
 			if i < rl {
 				jsonText +=
 					`      ` + `"wss://` + rel + `",
@@ -103,7 +105,7 @@ optionally a list of relays can be named, only their domain name is required, th
 			}
 		}
 		s.Log("starting up server\n")
-		autotls.Run(s, domain)
+		autotls.Run(s, s.domain)
 		s.Log("finished running server\n")
 	},
 }
@@ -121,11 +123,11 @@ func CheckFileExists(name string) (fi os.FileInfo, exists bool, err error) {
 
 func (s config) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.Log("%s\n", r.RequestURI)
-	w.WriteHeader(http.StatusOK)
 	if r.RequestURI == "/.well-known/nostr.json?name=_" {
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(s.message))
 	} else {
-		w.Write([]byte("gfy"))
+		http.Redirect(w, r, s.redirection, http.StatusSeeOther)
 	}
 }
 

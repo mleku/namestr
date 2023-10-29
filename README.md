@@ -36,13 +36,15 @@ put the details of your desired setup with the parameters you use to launch name
 
 	#!/usr/bin/bash
 
-	/home/<username>/.local/bin/namestr -vc mleku.online npub1mlekuhhxqq6p8w9x5fs469cjk3fu9zw7uptujr55zmpuhhj48u3qnwx3q5 a.nos.lol bevo.nostr1.com bitcoiner.social nos.lol nostr.wine relay.nostr.band Bevo.nostr1.com ae.purplerelay.com nostr.plebchain.org christpill.nostr1.com relay.nostr.me relay.devstr.org relay.primal.net
+	/home/<username>/.local/bin/namestr -vc mleku.online npub1mlekuhhxqq6p8w9x5fs469cjk3fu9zw7uptujr55zmpuhhj48u3qnwx3q5 github.com/mleku a.nos.lol bevo.nostr1.com bitcoiner.social nos.lol nostr.wine relay.nostr.band Bevo.nostr1.com ae.purplerelay.com nostr.plebchain.org christpill.nostr1.com relay.nostr.me relay.devstr.org relay.primal.net
 
 The `-vc` enables logging, which prints the URL requests that came in. it only sends a proper answer to the NIP-05 request path, all others return the text "gfy". (hah, if you want to change it, just edit the file `cmd/root.go` and look for "gfy" and change it)
 
 after that is the domain name. this is intended for a domain name that is your nostr display name, mleku.online in my case.
 
-after that, you put the npub. this is automatically decoded to hex for the json response.
+then you put the npub. this is automatically decoded to hex for the json response.
+
+third element is a URL that you want to be given as a redirect, such as your github profile or other social network profile.
 
 after that, zero or more of just the domain names of the relays that you usually use to post with. the `wss://` prefix is not needed.
 
