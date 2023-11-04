@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+
+/home/me/.local/bin/namestr -vc %s %s %s %s
