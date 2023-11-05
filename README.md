@@ -4,7 +4,23 @@ simple, zero configuration NIP-05 with LetsEncrypt TLS security
 
 well, not very much configuration. the actual thing itself just takes parameters, you have to add the launch parameters on your VPS in the server launch where you pointed your DNS name.
 
+## features
+
+- [x] provide web service that listens at `<domain name>/.well_known/nostr.json` and returns a correctly formed NIP-05 response that enables clients to associate the `npub` with the domain, as the sole identity (without the `name@` prefix)
+- [x] provides a simple single redirection for any other request on the domain that forwards to another web address, such as a social media or other hosted account like github.
+- [ ] automatic deployment on a VPS with the use of either password authentication or key authentication over SSH.
+
 ## usage
+
+### deploying from your computer to a VPS running linux
+
+in releases (soon TM) can be found binaries that contain all of the tooling and code to deploy a namestr server on a linux based VPS built for linux, windows and macos
+
+invocation is the same for all three and will do all the heavy lifting for you in one, and only require the user to understand basic use of the system's shell/command line interface.
+
+    namestr install [<username>@]<domain> <npub> <redirect> [<relays>...]
+
+### running it manually
 
 i am assuming here that you have basic shell and systems administration skills. the following assumes you have a VPS set up, DNS name pointing to the VPS IP, and you've put an installation of Go in the path and pointed to it using `/etc/profile`, including setting up a `GOBIN` where built binaries will be placed after running `go install`.
 
